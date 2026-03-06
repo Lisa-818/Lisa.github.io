@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>六爻摇卦 · 网页版</title>
+  <style>
+    body {
+      background: #2b1b0e;
+      color: #e6d5b8;
+      font-family: 'Microsoft YaHei', sans-serif;
+      text-align: center;
+      padding: 20px;
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      color: #d4a373;
+      font-size: 28px;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+    .gua-container {
+      width: 300px;
+      height: 400px;
+      background: rgba(184, 155, 123, 0.1);
+      border: 3px solid #b89b7b;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column-reverse;
+      justify-content: space-around;
+      align-items: center;
+      padding: 20px 0;
+      margin: 20px 0;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    }
+    .yao-line {
+      width: 80%;
+      height: 45px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 45px;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    .yang { color: #ffd966; text-shadow: 0 0 10px #ffaa00; }
+    .yin { color: #b0c4de; text-shadow: 0 0 10px #6a8caf; }
+    .placeholder { color: #5f4e3c; opacity: 0.3; }
+    .tip-text {
+      font-size: 18px;
+      color: #c4a484;
+      margin: 15px 0;
+      padding: 8px 25px;
+      background: rgba(80, 60, 40, 0.6);
+      border-radius: 40px;
+    }
+    .shake-btn {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #e6b17e, #9c6b4a);
+      border: 6px solid #d4a373;
+      box-shadow: 0 12px 0 #6b4e3a, 0 10px 20px rgba(0,0,0,0.4);
+      font-size: 28px;
+      color: #2b1b0e;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.1s;
+      margin: 20px 0 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .shake-btn:active {
+      transform: translateY(8px);
+      box-shadow: 0 4px 0 #6b4e3a, 0 10px 20px rgba(0,0,0,0.4);
+    }
+    .shake-btn:disabled {
+      opacity: 0.5;
+      transform: none;
+      box-shadow: 0 8px 0 #6b4e3a;
+      cursor: not-allowed;
+    }
+    .reset-btn {
+      background: transparent;
+      border: 2px solid #b89b7b;
+      color: #b89b7b;
+      padding: 12px 40px;
+      border-radius: 50px;
+      font-size: 18px;
+      cursor: pointer;
+      margin: 15px 0;
+      transition: 0.3s;
+    }
+    .reset-btn:hover {
+      background: #b89b7b;
+      color: #2b1b0e;
+    }
+    .result-text {
+      margin-top: 20px;
+      font-size: 28px;
+      color: #ffd966;
+      font-weight: bold;
+      min-height: 50px;
+    }
+    .footer {
+      margin-top: 30px;
+      color: #9f7e5c;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔮 六爻摇卦 · 古朴版</h1>
+  
+  <!-- 卦象容器，六条爻从下往上显示 -->
+  <div class="gua-container" id="guaContainer">
+    <!-- 初始六个占位符 -->
+    <div class="yao-line placeholder">—————</div>
+    <div class="yao-line placeholder">—————</div>
+    <div class="yao-line placeholder">—————</div>
+    <div class="yao-line placeholder">—————</div>
+    <div class="yao-line placeholder">—————</div>
+    <div class="yao-line placeholder">—————</div>
+  </div>
+  
+  <!-- 提示当前摇卦进度 -->
+  <div class="tip-text" id="tipText">第 1 次摇卦，还剩 6 次</div>
+  
+  <!-- 摇卦按钮 -->
+  <button class="shake-btn" id="shakeBtn" onclick="onShake()">抛铜钱</button>
+  
+  <!-- 重新摇卦按钮（初始隐藏） -->
+  <button class="reset-btn" id="resetBtn" onclick="resetGua()" style="display: none;">重新摇卦</button>
+  
+  <!-- 显示卦象结果 -->
+  <div class="result-text" id="resultText"></div>
+  
+  <div class="footer">点击“抛铜钱”六次，从下往上成卦</div>
+
+  <script>
+    // 简易卦名库（64卦精简版，实际可根据需要扩展）
+    const guaLibrary = [
+      "坤为地", "地雷复", "地水师", "地泽临", "雷水解", "雷风恒", "地风升", "水风井",
+      "泽水困", "泽地萃", "泽山咸", "水山蹇", "地山谦", "雷山小过", "雷泽归妹",
+      "乾为天", "天风姤", "天山遁", "天地否", "风地观", "山地剥", "火地晋", "火天大有",
+      "离为火", "火山旅", "火风鼎", "火水未济", "山水蒙", "风水涣", "天水讼", "天火同人",
+      "震为雷", "雷地豫", "雷水解", "雷风恒", "地风升", "水风井", "泽风大过", "泽雷随",
+      "巽为风", "风天小畜", "风火家人", "风雷益", "天雷无妄", "火雷噬嗑", "山雷颐", "山风蛊",
+      "坎为水", "水泽节", "水雷屯", "水火既济", "泽火革", "雷火丰", "地火明夷", "地水师",
+      "艮为山", "山火贲", "山天大畜", "山泽损", "火泽睽", "天泽履", "风泽中孚", "风山渐"
+    ];
+    
+    let step = 1;        // 当前是第几次摇卦（1-6）
+    let yaoList = [];    // 存储每次摇卦的结果，0=阴爻，1=阳爻
+    
+    // 获取页面元素
+    const guaContainer = document.getElementById('guaContainer');
+    const tipText = document.getElementById('tipText');
+    const shakeBtn = document.getElementById('shakeBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const resultText = document.getElementById('resultText');
+    
+    // 更新卦象显示
+    function renderGua() {
+      // 从下往上构建爻位（数组索引0对应初爻）
+      let html = '';
+      for (let i = 5; i >= 0; i--) {
+        if (yaoList[i] !== undefined) {
+          // 已有爻的结果
+          const yaoValue = yaoList[i];
+          const yaoClass = yaoValue === 1 ? 'yang' : 'yin';
+          const yaoSymbol = yaoValue === 1 ? '———' : '─ ─';
+          html += `<div class="yao-line ${yaoClass}">${yaoSymbol}</div>`;
+        } else {
+          // 占位符
+          html += `<div class="yao-line placeholder">—————</div>`;
+        }
+      }
+      guaContainer.innerHTML = html;
+    }
+    
+    // 摇卦函数
+    function onShake() {
+      if (step > 6) return;  // 已经摇满6次，不能再摇
+      
+      // 1. 生成随机爻（0或1）
+      const yao = Math.floor(Math.random() * 2);
+      yaoList.push(yao);
+      
+      // 2. 尝试震动反馈（手机浏览器支持）
+      if (window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate(30);  // 震动30毫秒
+      }
+      
+      // 3. 按钮动画效果
+      shakeBtn.style.transform = 'rotate(10deg)';
+      setTimeout(() => {
+        shakeBtn.style.transform = 'rotate(-10deg)';
+      }, 100);
+      setTimeout(() => {
+        shakeBtn.style.transform = 'rotate(0deg)';
+      }, 200);
+      
+      // 4. 更新显示
+      renderGua();
+      
+      // 5. 更新提示文字
+      if (step < 6) {
+        tipText.innerText = `第 ${step + 1} 次摇卦，还剩 ${6 - step} 次`;
+      } else if (step === 6) {
+        tipText.innerText = `✨ 卦象已成 ✨`;
+        shakeBtn.disabled = true;          // 禁用摇卦按钮
+        resetBtn.style.display = 'inline-block';  // 显示重置按钮
+        
+        // 根据六爻结果计算卦名（二进制转十进制）
+        const binaryStr = yaoList.join('');  // 例如 "011001"
+        const guaIndex = parseInt(binaryStr, 2) % guaLibrary.length;
+        const guaName = guaLibrary[guaIndex];
+        
+        resultText.innerText = `本卦：${guaName}`;
+      }
+      
+      step++;  // 步数加1
+    }
+    
+    // 重置摇卦
+    function resetGua() {
+      if (confirm('确定要重新摇卦吗？当前进度将丢失')) {
+        step = 1;
+        yaoList = [];
+        renderGua();
+        tipText.innerText = '第 1 次摇卦，还剩 6 次';
+        shakeBtn.disabled = false;
+        resetBtn.style.display = 'none';
+        resultText.innerText = '';
+      }
+    }
+  </script>
+</body>
+</html>
